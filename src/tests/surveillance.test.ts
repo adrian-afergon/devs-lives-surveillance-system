@@ -2,33 +2,66 @@ import {Sensor} from "../sensor";
 import {Camera} from "../camera";
 import {SurveillanceSystem} from "../surveillanceSystem";
 
-
-class FakeSensor extends Sensor {
-  detectMovement(): void {
-    this.notifyAllCallbacks();
-  }
-}
-
 describe('Surveillance System', () => {
 
-  /*
-  * sistema de vigilancia
-  *  - sensor de movimiento
-  *  - camara
-  *  --> cuando detecta movimiento, la camara se activa
-  * */
+  describe('Callbacks', function () {
+    class FakeSensor extends Sensor {
+      detectMovement(): void {
+        this.notifyAllCallbacks({type: 'movement'});
+      }
+      triggerOtherEvent(): void {
+        this.notifyAllCallbacks();
+      }
+    }
+    it('starts recording when movement is detected', () => {
+      const camera: Camera = {
+        record: jest.fn()
+      };
+      const sensor = new FakeSensor();
+      const surveillanceSystem = new SurveillanceSystem(camera, sensor);
+      surveillanceSystem.start();
 
-  it('starts recording when movement is detected', () => {
-    const camara: Camera = {
-      record: jest.fn()
-    };
-    const sensor = new FakeSensor();
-    const surveillanceSystem = new SurveillanceSystem(camara, sensor);
-    surveillanceSystem.start();
+      sensor.detectMovement();
 
-    sensor.detectMovement();
+      expect(camera.record).toHaveBeenCalled();
+    });
 
-    expect(camara.record).toHaveBeenCalled();
+    it('not record when sensor does not detect movement', () => {
+
+      const camera: Camera = {
+        record: jest.fn()
+      };
+      const sensor = new FakeSensor();
+      const surveillanceSystem = new SurveillanceSystem(camera, sensor);
+      surveillanceSystem.start();
+
+      sensor.triggerOtherEvent();
+
+      expect(camera.record).not.toHaveBeenCalled();
+    });
+
+  });
+
+  describe('Observer', function () {
+    class FakeSensor extends Sensor {
+      detectMovement(): void {
+        this.notifyAllObservers();
+      }
+    }
+
+    it('Observer', () => {
+      const camera: Camera = {
+        record: jest.fn()
+      };
+
+      const sensor = new FakeSensor();
+      const surveillanceSystem = new SurveillanceSystem(camera, sensor);
+      surveillanceSystem.start();
+
+      sensor.detectMovement();
+
+      expect(camera.record).toHaveBeenCalled();
+    });
 
   });
 
